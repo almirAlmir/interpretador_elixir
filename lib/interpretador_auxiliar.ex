@@ -1,17 +1,35 @@
 defmodule InterpretadorAuxiliar do
-  def position(name, index) do
-    do_position(name, index, 0)
+  alias AST
+
+  # Avalia as expressões (evall)
+  def evall(%AST{type: :plus, value: {left, right}}, stack), do: evall(left, stack) + evall(right, stack)
+  def evall(%AST{type: :minus, value: {left, right}}, stack), do: evall(left, stack) - evall(right, stack)
+  def evall(%AST{type: :times, value: {left, right}}, stack), do: evall(left, stack) * evall(right, stack)
+  def evall(%AST{type: :divide, value: {left, right}}, stack), do: evall(left, stack) / evall(right, stack)
+  def evall(%AST{type: :constant, value: value}, _stack), do: value
+  def evall(%AST{type: :variable, value: name}, stack) do
+    Map.get(stack, name, {:error, "Variável não encontrada: #{name}"})
   end
 
-  defp do_position(name, [h | _], n) when h == name, do: n
-  defp do_position(name, [_ | t], n), do: do_position(name, t, n + 1)
-  defp do_position(name, [], _), do: raise("Variável não encontrada: #{name}")
-
-  def fetch(loc, stack) do
-    Enum.at(stack, loc)
+  # Executa os comandos (exec)
+  def exec(%AST{type: :assign, value: {name, exp}}, stack) do
+    value = evall(exp, stack)
+    new_stack = Map.put(stack, name, value)
+    {:ok, nil, new_stack}
   end
 
-  def put(loc, new_val, stack) do
-    List.replace_at(stack, loc, new_val)
+  def exec(%AST{type: :print, value: exp}, stack) do
+    value = evall(exp, stack)
+    IO.puts(value)
+    {:ok, value, stack}
+  end
+
+  def exec(%AST{type: :seq, value: {head, tail}}, stack) do
+    {:ok, _, new_stack} = exec(head, stack)
+    if tail do
+      exec(tail, new_stack)
+    else
+      {:ok, nil, new_stack}
+    end
   end
 end
