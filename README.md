@@ -43,5 +43,8 @@ code = "x = 10\nprint(x * (5 + 3))"
 {:ok, ast} = Parser.parse(code)
 ```
 ### Execute a AST com o interpretador
+```elixir
 Interpretador.run(ast)
 ```
+
+### O resultado esperado no IEx será a impressão de 80 e uma tupla com o estado final.
